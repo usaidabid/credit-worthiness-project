@@ -11,3 +11,6 @@ I selected XGBoost for model training because it is highly efficient and perform
 Challenges Faced and Solutions:
 
 One of the main challenges was the class imbalance in the dataset, which was solved using SMOTE. Another issue was ensuring the correct mapping of input features for prediction, which I handled by matching input fields with training data columns carefully. Deployment also posed a challenge due to file path errors, which were fixed by correctly uploading the model file and referencing it properly in the Streamlit app.
+
+You can check it out on:
+https://huggingface.co/spaces/usaid123/credit_worthiness_App
