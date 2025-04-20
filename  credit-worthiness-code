@@ -1,0 +1,260 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e40311d5-40f6-4310-bffb-4c04a90b782c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#loading datasets\n",
+    "import pandas as pd\n",
+    "ds =pd.read_csv(r\"C:\\Users\\Zunnurain.Badar\\updated_credit_worthiness.csv\")\n",
+    " "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "1f9a48fc-9973-4228-8e75-057389cc22c2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ds.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d4f6da54-2d25-4dba-9b30-d08357f89d5e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ds.sum().isnull()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "9b62873b-e420-45b4-a126-50df7d2ad14b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ds.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "1706fb46-1421-47f7-9aff-eb62d4ca3769",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(ds['SeriousDlqin2yrs'].value_counts())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "a66b008c-ec30-4575-8b4d-c659bf98ff26",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip install imbalanced-learn"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "0f4c84c1-65f2-4b4f-bafb-6d62828a133b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#handling the missing values\n",
+    "from sklearn.impute import SimpleImputer\n",
+    "import pandas as pd\n",
+    "\n",
+    "x = ds.drop('SeriousDlqin2yrs', axis=1)\n",
+    "y = ds['SeriousDlqin2yrs']\n",
+    "\n",
+    "imputer = SimpleImputer(strategy='median')\n",
+    "x_imputed = imputer.fit_transform(x)\n",
+    "\n",
+    "x = pd.DataFrame(x_imputed, columns=x.columns)\n",
+    "\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "1956759d-3807-4d0b-839b-ba980f7a4dbd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#handling imbalanced data\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from imblearn.over_sampling import SMOTE\n",
+    "\n",
+    "x_train, x_test, y_train, y_test = train_test_split(\n",
+    "    x, y, test_size=0.2, random_state=42, stratify=y\n",
+    ")\n",
+    "\n",
+    "smote = SMOTE(random_state=42)\n",
+    "x_train_resampled, y_train_resampled = smote.fit_resample(x_train, y_train)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d684d049-259c-4e4e-82bc-c039a9ba7ac6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#training the model\n",
+    "import xgboost as xgb\n",
+    "model = xgb.XGBClassifier(random_state = 42,learning_rate=0.1,n_estimators=200,max_depth=6,subsample=0.8,scale_pos_weight = len(y_train[y_train == 0]) / len(y_train[y_train == 1]) )\n",
+    "model.fit(x_train,y_train)\n",
+    "y_pred = model.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "584c63d1-2940-4547-bb81-089b66fbe366",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#checking accuracy,precision , recall,confusion matrix\n",
+    "from sklearn.metrics import accuracy_score , precision_score , recall_score , confusion_matrix\n",
+    "accuracy = accuracy_score(y_test , y_pred)\n",
+    "print(\"accuracy is \", accuracy)\n",
+    "precision = precision_score(y_test,y_pred)\n",
+    "print(\"precision is\", precision)\n",
+    "recall = recall_score(y_test,y_pred)\n",
+    "print(\"recall is \", recall)\n",
+    "cm = confusion_matrix(y_test,y_pred)\n",
+    "print(\"confusion matrix\" , cm)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c7adfa43-918c-42d1-8293-c14f367c4f33",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import joblib\n",
+    "\n",
+    "# Save the model\n",
+    "joblib.dump(model, 'credit_risk_model.pkl')\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "ef68be45-9d60-4371-be17-53b2ff236b0e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip install streamlit\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "1e8867ca-b837-4017-a19b-044093929132",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "%%writefile app.py\n",
+    "import streamlit as st\n",
+    "import pandas as pd\n",
+    "import joblib\n",
+    "\n",
+    "# Load trained model\n",
+    "model = joblib.load(r'C:\\Users\\Zunnurain.Badar\\credit_risk_model.pkl')\n",
+    "\n",
+    "# App title\n",
+    "st.title(\"Credit Risk Prediction App\")\n",
+    "\n",
+    "# User input fields\n",
+    "st.subheader(\"Enter the following information:\")\n",
+    "revolving_utilization = st.number_input(\"💳 Credit Utilization Ratio (%)\", min_value=0.0, max_value=1.0)\n",
+    "age = st.number_input(\"👤 Age (Umar)\", min_value=18, max_value=100)\n",
+    "num_30_59_late = st.number_input(\"🕒 30–59 Days Late Payments\", min_value=0)\n",
+    "debt_ratio = st.number_input(\"📉 Debt-to-Income Ratio\", min_value=0.0)\n",
+    "monthly_income = st.number_input(\"💰 Monthly Income \", min_value=0.0)\n",
+    "open_credit_lines = st.number_input(\"🏦 Total Active Loans/Credit Lines\", min_value=0)\n",
+    "num_90_late = st.number_input(\"⏰ 90+ Days Late Payments\", min_value=0)\n",
+    "real_estate_loans = st.number_input(\"🏘️ Real Estate Loans Count\", min_value=0)\n",
+    "num_60_89_late = st.number_input(\"🕓 60–89 Days Late Payments\", min_value=0)\n",
+    "dependents = st.number_input(\"👪 Dependents \", min_value=0)\n",
+    "serious_default = st.selectbox(\"⚠️ Any Serious Default in Last 2 Years?\", [0, 1])\n",
+    "\n",
+    "# Predict button\n",
+    "if st.button(\"Predict Credit Risk\"):\n",
+    "    # Create input data\n",
+    "    input_data = pd.DataFrame({\n",
+    "        'Credit Utilization': [revolving_utilization],\n",
+    "        'Age': [age],\n",
+    "        '30-59 Days Late Payments': [num_30_59_late],\n",
+    "        'Debt-to-Income Ratio': [debt_ratio],\n",
+    "        'Monthly Income': [monthly_income],\n",
+    "        'Active Credit Lines': [open_credit_lines],\n",
+    "        '90+ Days Late Payments': [num_90_late],\n",
+    "        'Real Estate Loans': [real_estate_loans],\n",
+    "        '60-89 Days Late Payments': [num_60_89_late],\n",
+    "        'Dependents': [dependents],\n",
+    "    })\n",
+    "\n",
+    "    # Remove 'Unnamed: 0' column if it exists in the input_data (this matches the training dataset)\n",
+    "    input_data = input_data[['Credit Utilization', 'Age', '30-59 Days Late Payments', 'Debt-to-Income Ratio',\n",
+    "                             'Monthly Income', 'Active Credit Lines', '90+ Days Late Payments', 'Real Estate Loans',\n",
+    "                             '60-89 Days Late Payments', 'Dependents']]\n",
+    "\n",
+    "    # Make prediction\n",
+    "    prediction = model.predict(input_data)[0]\n",
+    "\n",
+    "    # Show result\n",
+    "    if prediction == 1:\n",
+    "        st.error(\"UnReliable Borrower ❌\")\n",
+    "    else:\n",
+    "        st.success(\"Reliable Borrower ✅\")\n",
+    " "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "bf100a16-d65f-4d54-9278-56f7843024bb",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!streamlit run app.py"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
